@@ -5,15 +5,12 @@ const EventEmitter = require('events');
 
 class Logger extends EventEmitter {
     log(message) {
-        console.log(`[INFO]: ${message}`);
         this.emit('info', message);
     }
     error(message) {
-        console.error(`[ERROR]: ${message}`);
         this.emit('error', message);
     }
     warn(message) {
-        console.warn(`[WARN]: ${message}`);
         this.emit('warn', message);
     }
 }
