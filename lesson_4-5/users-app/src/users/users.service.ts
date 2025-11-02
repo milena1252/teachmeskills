@@ -21,6 +21,7 @@ export class UsersService {
         const user = this.users.find(t => t.id === id);
 
         if (!user) {
+            this.logger.warn(`Пользователь с id: ${id} не найден`);
             throw new NotFoundException(`User ${id} - not found`);
         }
 
