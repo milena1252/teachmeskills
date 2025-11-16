@@ -1,9 +1,7 @@
 import { 
-    
     ForbiddenException, 
     Injectable, 
-    NotFoundException, 
-    UnauthorizedException 
+    NotFoundException
 } from '@nestjs/common';
 import { Task } from './task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -21,10 +19,21 @@ export class TasksService {
         private readonly dataSource: DataSource,
     ) {}
 
-    async findAll(): Promise<Task[]> {
-        return this.taskRepo.find({
-            order: { createdAt: 'DESC'},
-        });
+    async findAll(
+        limit: number = 10,
+        offset: number = 0,
+        completed?: boolean
+    ): Promise<Task[]> {
+        const query = this.taskRepo.createQueryBuilder('task')
+            .orderBy('task.createdAt', 'DESC')
+            .take(limit)
+            .skip(offset);
+
+        if (completed !== undefined) {
+            query.andWhere('task.completed = :completed', { completed });
+        }
+
+       return query.getMany();
     }
 
     async findOne(id: string): Promise<Task> {
@@ -48,28 +57,13 @@ export class TasksService {
         return savedTask;
     }
 
-    private async getOwnedTask(
-        id: string
-        //token: string | undefined,
-    ): Promise<Task> {
-        // if (!token) {
-        //     throw new UnauthorizedException('missing token');
-        // }
-
-        //const ownerId = this.auth.verifyToken(token);
+    private async getOwnedTask(id: string): Promise<Task> {
         const task = await this.findOne(id);
-
-        // if (task.ownerId !== ownerId) {
-        //     throw new ForbiddenException('access denied');
-        // }
 
         return task;
     }
 
-    async update(
-        id: string, 
-        dto: UpdateTaskDto
-    ): Promise<Task> {
+    async update(id: string, dto: UpdateTaskDto): Promise<Task> {
         const task = await this.getOwnedTask(id);
 
         this.taskRepo.merge(task, {
@@ -84,6 +78,10 @@ export class TasksService {
         const task = await this.getOwnedTask(id);
         
         await this.taskRepo.softDelete(task.id);
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.taskRepo.restore(id);
     }
 
     async complete(id: string) {

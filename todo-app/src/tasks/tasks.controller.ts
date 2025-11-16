@@ -4,7 +4,6 @@ import {
     DefaultValuePipe, 
     Delete, 
     Get, 
-    Headers, 
     HttpCode, 
     Param, 
     ParseIntPipe, 
@@ -27,26 +26,24 @@ export class TasksController {
         @Get()
         @UseInterceptors(CacheInterceptor)
         async findAll(
-            @Query('page', new DefaultValuePipe(1), new ParseIntPipe({ optional: true })) page: number,
             @Query('limit', new DefaultValuePipe(10), new ParseIntPipe({ optional: true })) limit: number,
+            @Query('offset', new DefaultValuePipe(0), new ParseIntPipe({ optional: true })) offset: number,
+            @Query('completed') completed?: string,
         ) {
-            const all = await this.tasks.findAll();
-            const start = (page - 1) * limit;
-            const data = all.slice(start, start + limit);
+            const tasks = await this.tasks.findAll(
+                limit,
+                offset,
+                completed ? completed === 'true': undefined
+            );
 
-            return {
-                data,
-                meta: {
-                    page,
-                    limit,
-                    total: all.length,
-                },
-            };
+            return tasks;
         }
 
         @Get(':id')
         @UseInterceptors(CacheInterceptor)
-        async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+        async findOne(
+            @Param('id', new ParseUUIDPipe()) id: string
+        ) {
             const task = await this.tasks.findOne(id);
 
             return task;
@@ -66,12 +63,12 @@ export class TasksController {
             this.tasks.remove(id);
         }
 
-        // @Patch(':id/complete')
-        // complete(
-        //     @Param('id', new ParseUUIDPipe()) id: string
-        // ) {
-        //     return this.tasks.complete(id);
-        // }
+        @Patch(':id/complete')
+        complete(
+            @Param('id', new ParseUUIDPipe()) id: string
+        ) {
+            return this.tasks.complete(id);
+        }
 
         @Patch('complete')
         completeMany(
@@ -84,10 +81,16 @@ export class TasksController {
         update(
             @Param('id', new ParseUUIDPipe()) id: string,
             @Body() dto: UpdateTaskDto,
-            @Headers('authorization') auth: string,
         ) {
            return this.tasks.update(id, dto);
         }
 
+        @Patch(':id/restore')
+        @HttpCode(200)
+        restore(
+            @Param('id', new ParseUUIDPipe()) id: string
+        ) {
+            return this.tasks.restore(id);
+        }
 }
 
