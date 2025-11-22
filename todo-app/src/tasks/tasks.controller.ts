@@ -23,6 +23,7 @@ import { CompleteManyDto } from './dto/complete-many.dto';
 import { CurrentUser } from 'src/common/current-user.decorator';
 import { ApiKeyGuard } from 'src/common/guards/api-key.guards';
 import { TaskOwnerOrAdminGuard } from 'src/common/guards/task-owner-or-admin.guards';
+import { TaskJwtGuard } from 'src/common/guards/task-jwt.guards';
 
 @Controller('tasks')
 export class TasksController {
@@ -60,6 +61,7 @@ export class TasksController {
         }
 
         @Post()
+        @UseGuards(TaskJwtGuard)
         @HttpCode(201)
         create(@Body() dto: CreateTaskDto) {
             return this.tasks.create(dto);
@@ -75,6 +77,7 @@ export class TasksController {
         }
 
         @Patch(':id/complete')
+        @UseGuards(TaskJwtGuard, TaskOwnerOrAdminGuard)
         complete(
             @Param('id', new ParseUUIDPipe()) id: string
         ) {
@@ -82,6 +85,7 @@ export class TasksController {
         }
 
         @Patch('complete')
+        @UseGuards(TaskJwtGuard)
         completeMany(
             @Body() dto: CompleteManyDto,
         ) {
@@ -89,7 +93,7 @@ export class TasksController {
         }
  
         @Patch(':id')
-        @UseGuards(TaskOwnerOrAdminGuard)
+        @UseGuards(TaskJwtGuard, TaskOwnerOrAdminGuard)
         update(
             @Param('id', new ParseUUIDPipe()) id: string,
             @Body() dto: UpdateTaskDto,
@@ -98,6 +102,7 @@ export class TasksController {
         }
 
         @Patch(':id/restore')
+        @UseGuards(TaskJwtGuard, TaskOwnerOrAdminGuard)
         @HttpCode(200)
         restore(
             @Param('id', new ParseUUIDPipe()) id: string
@@ -105,3 +110,4 @@ export class TasksController {
             return this.tasks.restore(id);
         }
 }
+
