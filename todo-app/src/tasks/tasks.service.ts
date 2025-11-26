@@ -81,7 +81,9 @@ export class TasksService {
     }
 
     async restore(id: string): Promise<void> {
-        await this.taskRepo.restore(id);
+        const task = await this.findOne(id);
+
+        await this.taskRepo.restore(task.id);
     }
 
     async complete(id: string) {

@@ -5,9 +5,13 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './task.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+    }),
     CacheModule.register({
       ttl: 20,
       //isGlobal: true,
@@ -25,3 +29,4 @@ import { Task } from './task.entity';
   exports: [TasksService],
 })
 export class TasksModule {}
+
