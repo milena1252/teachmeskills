@@ -13,7 +13,8 @@ import {
     Query, 
     Req, 
     UseGuards, 
-    UseInterceptors
+    UseInterceptors,
+    UsePipes
 } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -24,8 +25,14 @@ import { CurrentUser } from 'src/common/current-user.decorator';
 import { ApiKeyGuard } from 'src/common/guards/api-key.guards';
 import { TaskOwnerOrAdminGuard } from 'src/common/guards/task-owner-or-admin.guards';
 import { TaskJwtGuard } from 'src/common/guards/task-jwt.guards';
+import { NormalizeTaskPipe } from 'src/common/pipes/normalize-task.pipe';
+import { TaskStatusValidationPipe } from 'src/common/pipes/task-status-validation.pipe';
+import { TaskStatus } from 'src/common/task-status.enum';
+import { LoggerInterceptor } from 'src/common/interceptors/logger.interceptor';
+import { ResponseTransformInterceptor } from 'src/common/interceptors/response-transform.interceptor';
 
 @Controller('tasks')
+@UseInterceptors(LoggerInterceptor, ResponseTransformInterceptor)
 export class TasksController {
     constructor(private readonly tasks: TasksService) {}
 
@@ -40,6 +47,7 @@ export class TasksController {
             @Query('limit', new DefaultValuePipe(10), new ParseIntPipe({ optional: true })) limit: number,
             @Query('offset', new DefaultValuePipe(0), new ParseIntPipe({ optional: true })) offset: number,
             @Query('completed') completed?: string,
+            @Query('status', TaskStatusValidationPipe) status?: TaskStatus,
         ) {
             const tasks = await this.tasks.findAll(
                 limit,
@@ -61,7 +69,7 @@ export class TasksController {
         }
 
         @Post()
-        @UseGuards(TaskJwtGuard)
+        @UsePipes(NormalizeTaskPipe)        
         @HttpCode(201)
         create(@Body() dto: CreateTaskDto) {
             return this.tasks.create(dto);
