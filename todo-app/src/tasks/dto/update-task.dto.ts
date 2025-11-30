@@ -1,4 +1,5 @@
-import { IsBoolean, IsOptional, IsString, MinLength } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
+import { TaskPriority } from "src/common/task-priority.enum";
 
 export class UpdateTaskDto {
     @IsString()
@@ -9,4 +10,12 @@ export class UpdateTaskDto {
     @IsOptional()
     @IsBoolean()
     completed?: boolean;
+
+    @IsOptional()
+    @IsEnum(TaskPriority)
+    priority?: TaskPriority;
+
+    @IsOptional()
+    @IsDateString()
+    deadline?: string | Date;
 }

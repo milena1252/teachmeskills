@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import dbConfig from './config/db.config';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import dbConfig from './config/db.config';
       secret: 'super-secret-key',
       tokenPrefix: 'Bearer',
      }),
+    UsersModule,
     ],
   controllers: [AppController],
   providers: [AppService],

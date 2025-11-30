@@ -1,3 +1,4 @@
+import { TaskPriority } from "../common/task-priority.enum";
 import { 
     Column, 
     CreateDateColumn, 
@@ -16,6 +17,16 @@ export class Task {
 
     @Column({ length: 255 })
     title: string;
+
+    @Column({
+        type: 'enum',
+        enum: TaskPriority,
+        default: TaskPriority.MEDIUM,
+    })
+    priority: TaskPriority;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    deadline?: Date;
 
     @Column({ default: false })
     completed: boolean;

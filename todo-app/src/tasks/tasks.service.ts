@@ -1,4 +1,5 @@
 import { 
+    ConflictException,
     ForbiddenException, 
     Injectable, 
     NotFoundException
@@ -47,14 +48,22 @@ export class TasksService {
     }
 
     async create(dto: CreateTaskDto): Promise<Task> {
+        const tasks = await this.findAll();
+        const existingTitles = tasks.map((t) => t.title);
+
+        if (existingTitles.includes(dto.title)) {
+            throw new ConflictException('Task with this title already exists');
+        }
+
         const task = this.taskRepo.create({
             title: dto.title,
             completed: dto.completed ?? false,
             ownerId: dto.userId,
+            priority: dto.priority,
+            deadline: dto.deadline,
         });
-        const savedTask = await this.taskRepo.save(task);
 
-        return savedTask;
+        return this.taskRepo.save(task);
     }
 
     private async getOwnedTask(id: string): Promise<Task> {
@@ -69,6 +78,8 @@ export class TasksService {
         this.taskRepo.merge(task, {
             title: dto.title ?? task.title,
             completed: dto.completed ?? task.completed,
+            priority: dto.priority ?? task.priority,
+            deadline: dto.deadline ?? task.deadline,
         });
 
         return this.taskRepo.save(task);
