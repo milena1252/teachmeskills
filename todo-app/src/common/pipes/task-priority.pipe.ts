@@ -36,8 +36,9 @@ export class TaskPriorityPipe implements PipeTransform {
     private validateHighPriority(deadline: string): boolean {
         if (!deadline) return false;
 
-        const diffHours = (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60);
-        return diffHours >= 24;
+        const diffMs = (new Date(deadline).getTime() - Date.now());
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        return diffMs >= ONE_DAY;
     }
 
     private validateMediumPriority(deadline: string): boolean {
