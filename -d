@@ -1,1 +1,0 @@
-{"message":["title must be longer than or equal to 3 characters","title must be a string","userId must be longer than or equal to 3 characters","userId must be a string"],"error":"Bad Request","statusCode":400}
