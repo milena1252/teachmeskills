@@ -1,6 +1,7 @@
-import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Req } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom, retry, throwError } from 'rxjs';
+import { v4 as uuid } from 'uuid';
 
 @Controller()
 export class AppController {
@@ -8,12 +9,34 @@ export class AppController {
 
   @Get(':id')
   getUser(@Param('id') id: number) {
-    return lastValueFrom(this.client.send('get-user', { id }));
+    return lastValueFrom( this.client.send('get-user', { id }));
   }
 
   @Post()
-  createUser() {
-    this.client.emit('user-created', { id: Date.now() });
-    return { status: 'ok' };
+  createUser(@Req() req, @Body() body: { name: string, email: string }) {
+    const requestId = uuid();
+    const traceId = req.traceId;
+
+    const result = this.client.send('create-user', { 
+        traceId,
+        requestId,
+        name: body.name,
+        email: body.email,
+       })
+      .pipe(
+        retry(3),
+        catchError((err) => {
+          console.error('[gateway] create-user failed after retries', {
+            traceId,
+            error: err?.message ?? err,
+            requestId,
+          });
+          return throwError(() => new Error('user-service unavailable, try later'));
+        }),
+      );
+
+      return lastValueFrom(result);
   }
 }
+
+
