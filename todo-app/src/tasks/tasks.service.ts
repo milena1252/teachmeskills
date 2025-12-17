@@ -1,24 +1,65 @@
 import { 
     ConflictException,
     ForbiddenException, 
+    Inject, 
     Injectable, 
     NotFoundException
 } from '@nestjs/common';
 import { Task } from './task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { AuthService } from 'src/auth/auth.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 
 @Injectable()
 export class TasksService {
     constructor(
-        private readonly auth: AuthService,
         @InjectRepository(Task)
         private readonly taskRepo: Repository<Task>,
         private readonly dataSource: DataSource,
+        @Inject(CACHE_MANAGER) private readonly cache: Cache,
+
+        @InjectQueue('tasks')
+        private readonly tasksQueue: Queue,
     ) {}
+
+    private taskCacheKey(id: string) {
+        return `tasks: ${id}`;
+    }
+
+    private async enqueueInvalidateTaskCache(taskId: string) {
+        await this.tasksQueue.add(
+            'invalidate-task-cache',
+            { taskId },
+            {
+                attempts: 5,
+                backoff: { delay: 1000, type: 'exponential' },
+                removeOnComplete: true,
+            },
+        );
+    }
+
+     async create(dto: CreateTaskDto): Promise<Task> {
+        const tasks = await this.findAll();
+        const existingTitles = tasks.map((t) => t.title);
+
+        if (existingTitles.includes(dto.title)) {
+            throw new ConflictException('Task with this title already exists');
+        }
+
+        const task = this.taskRepo.create({
+            title: dto.title,
+            completed: dto.completed ?? false,
+            ownerId: dto.userId,
+            priority: dto.priority,
+            deadline: dto.deadline,
+        });
+
+        return this.taskRepo.save(task);
+    }
 
     async findAll(
         limit: number = 10,
@@ -38,32 +79,28 @@ export class TasksService {
     }
 
     async findOne(id: string): Promise<Task> {
-        const task = await this.taskRepo.findOne({ where: { id }});
+        const key = `tasks:${id}`;
+
+        const cached = await this.cache.get<Task>(key);
+        if (cached) {
+            console.log('CACHE HIT', key);
+
+            return cached;
+        }
+
+        console.log('DB CALL', id);
+
+        const task = await this.taskRepo.findOne({ 
+            where: { id },
+            withDeleted: false,
+        });
 
         if (!task) {
             throw new NotFoundException(`Task ${id} - not found`);
         }
 
+        await this.cache.set(key, task, 300_000);
         return task;
-    }
-
-    async create(dto: CreateTaskDto): Promise<Task> {
-        const tasks = await this.findAll();
-        const existingTitles = tasks.map((t) => t.title);
-
-        if (existingTitles.includes(dto.title)) {
-            throw new ConflictException('Task with this title already exists');
-        }
-
-        const task = this.taskRepo.create({
-            title: dto.title,
-            completed: dto.completed ?? false,
-            ownerId: dto.userId,
-            priority: dto.priority,
-            deadline: dto.deadline,
-        });
-
-        return this.taskRepo.save(task);
     }
 
     private async getOwnedTask(id: string): Promise<Task> {
@@ -82,13 +119,19 @@ export class TasksService {
             deadline: dto.deadline ?? task.deadline,
         });
 
-        return this.taskRepo.save(task);
+        const saved = this.taskRepo.save(task);
+
+        this.enqueueInvalidateTaskCache(id);
+
+        return saved;
     }
 
     async remove(id: string): Promise<void> {
         const task = await this.getOwnedTask(id);
         
         await this.taskRepo.softDelete(task.id);
+
+        this.enqueueInvalidateTaskCache(id);
     }
 
     async restore(id: string): Promise<void> {
@@ -100,12 +143,13 @@ export class TasksService {
     async complete(id: string) {
         const task = await this.getOwnedTask(id);
         
-        if(!task.completed) {
-            task.completed = true;
-            await this.taskRepo.save(task);
-        }
+       task.completed = true;
 
-        return task;
+        const saved = this.taskRepo.save(task);
+
+        this.enqueueInvalidateTaskCache(id);
+
+        return saved;
     } 
 
     async completeMany(ids: string[]) {
@@ -130,6 +174,7 @@ export class TasksService {
                 .execute();
 
             await runner.commitTransaction();
+            await Promise.all(ids.map((id) => this.enqueueInvalidateTaskCache(id)));
         } catch (e) {
             await runner.rollbackTransaction();
             throw e;
@@ -138,15 +183,4 @@ export class TasksService {
         }
     }
 
-    toHateoas(task: Task) {
-        return {
-            ...task,
-            _links: {
-                self: { href: `/tasks/${task.id}` },
-                update: { href: `/tasks/${task.id}`, method: 'PATCH'},
-                delete: { href: `/tasks/${task.id}`, method: 'DELETE'},
-                complete: { href: `/tasks/${task.id}/complete`, method: 'PATCH'},
-            },
-        };
-    }
 }

@@ -1,28 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AUTH_OPTIONS, type AuthModuleOptions} from './auth.constans';
+import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
 export class AuthService {
-    constructor(@Inject(AUTH_OPTIONS) private readonly opts: AuthModuleOptions) {}
+    constructor(
+        private readonly jwtService: JwtService,
+        @Inject(AUTH_OPTIONS) private readonly opts: AuthModuleOptions,
+    ) {}
 
     issueToken(userId: string): string {
-        const prefix = this.opts.tokenPrefix ?? 'Bearer';
-        const payload = Buffer.from(`${userId}:${this.opts.secret}`).toString('base64');
-
-        return `${prefix} ${payload}`
+        return this.jwtService.sign({
+            sub: userId,
+        });
     }
 
-    verifyToken(token: string): string {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [_prefix, encoded] = token.split(' ');
-        const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-        //userId: secret
-        const [userId, secret] = decoded.split(':');
-
-        if (secret !== this.opts.secret) {
-            throw new Error('invalid token');
-        }
-        return userId;
+    verifyToken(token: string): { userId: string } {
+       try {
+        const payload = this.jwtService.verify(token);
+        return { userId: payload.sub };
+       } catch {
+        throw new UnauthorizedException('Invalid token');
+       }
     }
 }

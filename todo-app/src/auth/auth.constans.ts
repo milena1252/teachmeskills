@@ -1,6 +1,7 @@
 export const AUTH_OPTIONS = 'AUTH_OPTIONS';
+import { StringValue } from 'ms';
 
 export interface AuthModuleOptions {
     secret: string;
-    tokenPrefix?: string;
+    expiresIn?:  StringValue | number;
 }
