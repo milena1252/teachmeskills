@@ -11,7 +11,6 @@ import {
     Patch, 
     Post, 
     Query, 
-    Req, 
     UseGuards, 
     UseInterceptors,
     UsePipes
@@ -30,6 +29,7 @@ import { LoggerInterceptor } from 'src/common/interceptors/logger.interceptor';
 import { ResponseTransformInterceptor } from 'src/common/interceptors/response-transform.interceptor';
 import { TaskPriorityPipe } from 'src/common/pipes/task-priority.pipe';
 import { TaskChangeLogInterceptor } from 'src/common/interceptors/task-change-log.interceptor';
+import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 
 @Controller('tasks')
 @UseInterceptors(LoggerInterceptor, ResponseTransformInterceptor, TaskChangeLogInterceptor)
@@ -42,7 +42,7 @@ export class TasksController {
         }
 
         @Get()
-        @UseInterceptors(CacheInterceptor)
+        //@UseInterceptors(CacheInterceptor)
         async findAll(
             @Query('limit', new DefaultValuePipe(10), new ParseIntPipe({ optional: true })) limit: number,
             @Query('offset', new DefaultValuePipe(0), new ParseIntPipe({ optional: true })) offset: number,
@@ -58,10 +58,8 @@ export class TasksController {
         }
 
         @Get(':id')
-        @UseInterceptors(CacheInterceptor)
-        async findOne(
-            @Param('id', new ParseUUIDPipe()) id: string
-        ) {
+        // @UseInterceptors(CacheInterceptor)
+        async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
             const task = await this.tasks.findOne(id);
 
             return task;
@@ -92,7 +90,7 @@ export class TasksController {
         }
 
         @Patch('complete')
-        @UseGuards(TaskJwtGuard)
+        //@UseGuards(TaskJwtGuard)
         completeMany(
             @Body() dto: CompleteManyDto,
         ) {
@@ -118,3 +116,5 @@ export class TasksController {
         }
 }
 
+//52a58507-8fe5-48e8-96a3-fe8dc7860c23
+//2c177609-45a1-40a5-baf9-8a922294dcc2

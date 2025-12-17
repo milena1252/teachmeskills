@@ -1,5 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
-import { Observable, tap } from "rxjs";
+import { tap } from "rxjs";
 
 @Injectable()
 export class RpcTraceInterceptor implements NestInterceptor {

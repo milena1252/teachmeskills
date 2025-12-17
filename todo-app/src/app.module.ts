@@ -7,6 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import dbConfig from './config/db.config';
 import { UsersModule } from './users/users.module';
+import { BullModule } from '@nestjs/bull';
+import { CacheModule } from '@nestjs/cache-manager';
+import KeyvRedis from '@keyv/redis';
 
 @Module({
   imports: [
@@ -27,12 +30,30 @@ import { UsersModule } from './users/users.module';
       },
     }),
 
-    TasksModule,
     AuthModule.forRoot({
       secret: 'super-secret-key',
-      tokenPrefix: 'Bearer',
+      expiresIn: '1h',
      }),
+
+    BullModule.forRoot({
+      redis: { 
+        host: process.env.REDIS_HOST ?? 'localhost',
+        port: +(process.env.REDIS_PORT ?? 6379),
+      },
+    }),
+
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: async () => ({
+        stores: [new KeyvRedis('redis://localhost:6379')],
+        ttl: 60_000,
+      }),
+    }),
+
+    TasksModule,
+    
     UsersModule,
+    
     ],
   controllers: [AppController],
   providers: [AppService],
