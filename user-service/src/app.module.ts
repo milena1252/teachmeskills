@@ -1,20 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [],
   controllers: [AppController],
-  providers: [
-    AppService, 
-    {
-      provide: 'EMAIL_CLIENT',
-      useFactory: () => ClientProxyFactory.create({
-      transport: Transport.REDIS,
-      options: { host: 'localhost', port: 6379 },
-      }),
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
