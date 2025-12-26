@@ -6,6 +6,8 @@ import { Task } from './task.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { BullModule } from '@nestjs/bull';
 import { TaskCacheProcessor } from './tasks-cache.processor';
+import { TaskEmailProcessor } from './task-email.processor';
+import { FileStorageModule } from 'src/file-storage/file-storage.module';
 
 @Module({
   imports: [
@@ -13,10 +15,18 @@ import { TaskCacheProcessor } from './tasks-cache.processor';
       secret: process.env.JWT_SECRET,
     }),
     TypeOrmModule.forFeature([Task]),
-    BullModule.registerQueue({ name: 'tasks' }),
+    BullModule.registerQueue(
+      { name: 'tasks' },
+      { name: 'email' },
+    ),
+    FileStorageModule,
   ],
   controllers: [TasksController],
-  providers: [TasksService, TaskCacheProcessor],
+  providers: [
+    TasksService, 
+    TaskCacheProcessor,
+    TaskEmailProcessor,
+  ],
   exports: [TasksService],
 })
 export class TasksModule {}

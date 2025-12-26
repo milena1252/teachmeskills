@@ -9,6 +9,7 @@ import dbConfig from './config/db.config';
 import { UsersModule } from './users/users.module';
 import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
+import { FileStorageModule } from './file-storage/file-storage.module';
 import KeyvRedis from '@keyv/redis';
 
 @Module({
@@ -53,6 +54,8 @@ import KeyvRedis from '@keyv/redis';
     TasksModule,
     
     UsersModule,
+    
+    FileStorageModule,
     
     ],
   controllers: [AppController],
