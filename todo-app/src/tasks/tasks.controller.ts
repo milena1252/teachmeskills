@@ -1,4 +1,5 @@
 import { 
+    BadRequestException,
     Body, 
     Controller, 
     DefaultValuePipe, 
@@ -11,6 +12,7 @@ import {
     Patch, 
     Post, 
     Query, 
+    UploadedFile, 
     UseGuards, 
     UseInterceptors,
     UsePipes
@@ -30,11 +32,16 @@ import { ResponseTransformInterceptor } from 'src/common/interceptors/response-t
 import { TaskPriorityPipe } from 'src/common/pipes/task-priority.pipe';
 import { TaskChangeLogInterceptor } from 'src/common/interceptors/task-change-log.interceptor';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileStorageService } from 'src/file-storage/file-storage.service';
 
 @Controller('tasks')
 @UseInterceptors(LoggerInterceptor, ResponseTransformInterceptor, TaskChangeLogInterceptor)
 export class TasksController {
-    constructor(private readonly tasks: TasksService) {}
+    constructor(
+        private readonly tasks: TasksService,
+        private readonly fileStorage: FileStorageService,
+    ) {}
 
         @Get('whoami')
         async getUser(@CurrentUser() user) {
@@ -113,6 +120,34 @@ export class TasksController {
             @Param('id', new ParseUUIDPipe()) id: string
         ) {
             return this.tasks.restore(id);
+        }
+
+        @Post('import-csv')
+        @UseInterceptors(
+            FileInterceptor('file', {
+                limits: { fileSize: 10 * 1024 *1024 },
+                fileFilter(_req, file, cb) {
+                    const ok =
+                        file.mimetype === 'text/csv' ||
+                        file.mimetype === 'application/vnd.ms-excel' ||
+                        file.mimetype === 'application/octet-stream';
+                    
+                    if (!ok) {
+                        return cb(
+                            new BadRequestException('Only CSV file are allowed'),
+                            false,
+                        );
+                    }
+                    cb(null, true);
+                },
+            }),
+        )
+        async importCsv(@UploadedFile() file: Express.Multer.File) {
+            if (!file) {
+                throw new BadRequestException('File is required');
+            }
+
+            return this.fileStorage.saveToLocal(file, 'csv');
         }
 }
 

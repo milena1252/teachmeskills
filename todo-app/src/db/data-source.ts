@@ -10,11 +10,11 @@ const base = {
     database: process.env.DB_DATABASE,
 };
 
-export default new DataSource({
+export const AppDataSource = new DataSource({
     ...base,
     entities: ['src/**/*.entity.ts'],
     migrations: ['src/migrations/*{.ts,.js}'],
     synchronize: false,
 });
     
-
+export default AppDataSource;

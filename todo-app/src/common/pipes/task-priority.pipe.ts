@@ -10,19 +10,25 @@ export class TaskPriorityPipe implements PipeTransform {
     ];
 
     transform(value: any) {
-        if (!value) {
+        if (!value || typeof value !== 'object') {
             return value;
         }
 
-        if (!this.isValidPriorities(value.priority)) {
-            throw new BadRequestException(`Invalid priority: ${value.priority}`);
+        const { priority, deadline } = value;
+
+        if (priority === undefined || priority === null) {
+            return value;
         }
 
-        if (value.priority === TaskPriority.HIGH && !this.validateHighPriority(value.deadline)) {
+        if (!this.isValidPriorities(priority)) {
+            throw new BadRequestException(`Invalid priority: ${priority}`);
+        }
+
+        if (priority === TaskPriority.HIGH && !this.validateHighPriority(deadline)) {
             throw new BadRequestException('HIGH -> deadline must be at least 24h ahead');
         }
 
-        if (value.priority === TaskPriority.MEDIUM && !this.validateMediumPriority(value.deadline)) {
+        if (priority === TaskPriority.MEDIUM && !this.validateMediumPriority(deadline)) {
             throw new BadRequestException('MEDIUM -> deadline must be in the future');
         }
          
@@ -33,7 +39,7 @@ export class TaskPriorityPipe implements PipeTransform {
         return this.allowedPriorities.includes(priority as TaskPriority);
     }  
 
-    private validateHighPriority(deadline: string): boolean {
+    private validateHighPriority(deadline?: string): boolean {
         if (!deadline) return false;
 
         const diffMs = (new Date(deadline).getTime() - Date.now());

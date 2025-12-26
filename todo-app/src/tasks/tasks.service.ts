@@ -24,6 +24,8 @@ export class TasksService {
 
         @InjectQueue('tasks')
         private readonly tasksQueue: Queue,
+        @InjectQueue('email')
+        private readonly emailQueue: Queue,
     ) {}
 
     private taskCacheKey(id: string) {
@@ -38,6 +40,18 @@ export class TasksService {
                 attempts: 5,
                 backoff: { delay: 1000, type: 'exponential' },
                 removeOnComplete: true,
+            },
+        );
+    }
+
+    private async enqueueSendWelcomeNotification(ownerId: string, taskId: string) {
+        await this.emailQueue.add(
+            'send-welcome',
+            { ownerId, taskId },
+            {
+                attempts: 5,
+                backoff: { delay: 1000, type: 'exponential' },
+                removeOnComplete: false,
             },
         );
     }
@@ -58,7 +72,14 @@ export class TasksService {
             deadline: dto.deadline,
         });
 
-        return this.taskRepo.save(task);
+        const saved = await this.taskRepo.save(task);
+
+        await this.enqueueSendWelcomeNotification(
+            saved.ownerId,
+            saved.id,
+        );
+
+        return saved;
     }
 
     async findAll(

@@ -12,12 +12,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const taskQueue = app.get<Queue>(getQueueToken('tasks'));
+  const emailQueie = app.get<Queue>(getQueueToken('email'));
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath('/admin/queues');
 
   createBullBoard({
-    queues: [new BullAdapter(taskQueue)],
+    queues: [
+      new BullAdapter(taskQueue),
+      new BullAdapter(emailQueie),
+    ],
     serverAdapter,
   });
 
