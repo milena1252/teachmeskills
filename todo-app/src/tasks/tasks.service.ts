@@ -204,4 +204,17 @@ export class TasksService {
         }
     }
 
+    async findByIds(ids: string[]): Promise<Task[]> {
+        const tasks = await this.taskRepo.find({
+            where: { id: In(ids) },
+            withDeleted: false,
+        });
+
+        const map = new Map(tasks.map((t) => [t.id, t]));
+
+        return ids
+            .map((id) => map.get(id))
+            .filter((task): task is Task => task !== undefined);
+    }
+
 }

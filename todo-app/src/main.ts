@@ -7,9 +7,12 @@ import { getQueueToken } from '@nestjs/bull';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(express.json());
 
   const taskQueue = app.get<Queue>(getQueueToken('tasks'));
   const emailQueie = app.get<Queue>(getQueueToken('email'));

@@ -11,6 +11,9 @@ import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
 import { FileStorageModule } from './file-storage/file-storage.module';
 import KeyvRedis from '@keyv/redis';
+import {  GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -49,6 +52,15 @@ import KeyvRedis from '@keyv/redis';
         stores: [new KeyvRedis('redis://localhost:6379')],
         ttl: 60_000,
       }),
+    }),
+
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      playground: true,
+      subscriptions: {
+        'subscriptions-transport-ws': true,
+      },
     }),
 
     TasksModule,

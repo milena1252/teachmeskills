@@ -8,6 +8,11 @@ import { BullModule } from '@nestjs/bull';
 import { TaskCacheProcessor } from './tasks-cache.processor';
 import { TaskEmailProcessor } from './task-email.processor';
 import { FileStorageModule } from 'src/file-storage/file-storage.module';
+import { TasksResolver } from './tasks.resolver';
+import { TaskByIdLoader } from './tasks-by-id.loader';
+import { UsersModule } from 'src/users/users.module';
+import { PubSub } from 'graphql-subscriptions';
+import { TasksSubscriptionResolver } from './tasks.subscription.resolver';
 
 @Module({
   imports: [
@@ -20,12 +25,20 @@ import { FileStorageModule } from 'src/file-storage/file-storage.module';
       { name: 'email' },
     ),
     FileStorageModule,
+    UsersModule,
   ],
   controllers: [TasksController],
   providers: [
     TasksService, 
+    TasksResolver,
+    TasksSubscriptionResolver,
+    TaskByIdLoader,
     TaskCacheProcessor,
     TaskEmailProcessor,
+    {
+      provide: 'PUB_SUB',
+      useValue: new PubSub(),
+    },
   ],
   exports: [TasksService],
 })
