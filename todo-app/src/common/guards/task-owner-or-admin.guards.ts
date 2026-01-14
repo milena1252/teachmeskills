@@ -10,7 +10,7 @@ export class TaskOwnerOrAdminGuard implements CanActivate {
         const req = context.switchToHttp().getRequest<RequestWithUser>();
 
         const user = req.user;
-        const taskId = req.params.id;
+        const taskId = String(req.params.id);
 
         if (!user || !user.id) {
             throw new ForbiddenException('No User Context');
