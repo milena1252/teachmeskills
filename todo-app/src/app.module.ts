@@ -16,6 +16,7 @@ import KeyvRedis from '@keyv/redis';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       load: [dbConfig],
     }),
 

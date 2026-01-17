@@ -1,14 +1,36 @@
 version: "3.9"
 
 services:
+  db:
+  image: postgres:16-alpine
+  environment:
+    POSTGRES_DB: todo_app
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: 1252
+  ports:
+    - "5432:5432"
+  
   redis:
-    image: redis:7
-    container_name: redis7
+    image: redis:7-alpine
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis-data:/data
+    - "6379:6379"
 
-volumes:
-  redis-data:
+  app:
+    build: 
+      context: 
+      dockerfile: Dockerfile
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_NAME: mydb2
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+

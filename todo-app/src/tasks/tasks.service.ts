@@ -22,10 +22,8 @@ export class TasksService {
         private readonly dataSource: DataSource,
         @Inject(CACHE_MANAGER) private readonly cache: Cache,
 
-        @InjectQueue('tasks')
-        private readonly tasksQueue: Queue,
-        @InjectQueue('email')
-        private readonly emailQueue: Queue,
+        @InjectQueue('tasks') private readonly tasksQueue: Queue,
+        @InjectQueue('email') private readonly emailQueue: Queue,
     ) {}
 
     private taskCacheKey(id: string) {
