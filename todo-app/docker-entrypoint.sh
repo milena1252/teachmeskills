@@ -2,7 +2,9 @@
 set -e
 
 echo "Waiting for Postgres"
-pg_isready
+until PGPASSWORD="$DB_PASSWORD" pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_DATABASE"; do
+  sleep 1
+done
 
 echo "running migrations..."
 npm run migration:run:prod

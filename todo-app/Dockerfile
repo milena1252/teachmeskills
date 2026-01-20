@@ -1,4 +1,4 @@
-# 1 stage  -build
+# 1 stage - build
 FROM node:20-alpine AS build
 WORKDIR /app
 
@@ -11,6 +11,8 @@ RUN npm run build
 # 2 stage - production
 FROM node:20-alpine AS prod
 WORKDIR /app
+
+RUN apk add --no-cache postgresql-client
 
 COPY package*.json ./
 RUN npm ci --omit=dev
