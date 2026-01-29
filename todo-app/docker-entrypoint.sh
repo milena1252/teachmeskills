@@ -9,8 +9,8 @@ done
 echo "running migrations..."
 npm run migration:run:prod
 
-echo "Seeding data..."
-npm run seed:prod
+#echo "Seeding data..."
+#npm run seed:prod
 
 echo "Starting app..."
 exec "$@"

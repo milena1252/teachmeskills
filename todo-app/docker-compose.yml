@@ -1,45 +1,51 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
+    env_file:
+      - .env.docker
     environment:
-      POSTGRES_DB: mydb2
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1252
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
-    # volumes:
-    #   - pgdata:/var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   
   redis:
     image: redis:7-alpine
     ports:
     - "6379:6379"
+    command: ["redis-server", "--append-only", "yes"]
+    volumes:
+      - redisdata:/data
 
   app:
     build: 
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
     environment:
-      PORT: 3000
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: 1252
-      DB_DATABASE: mydb2
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      NODE_ENV: development
+      PORT: ${PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      NODE_ENV: ${NODE_ENV}
     ports:
       - "3000:3000"
-    volumes:
-      - ./:/app
-      - /app/node_modules
+    # volumes:
+    #   - ./:/app
+    #   - /app/node_modules
     depends_on:
       - db
       - redis
 
-# volumes:
-#   pgdata:
+volumes:
+  pgdata:
+  redisdata:
 
