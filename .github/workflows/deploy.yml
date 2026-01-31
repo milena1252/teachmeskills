@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_PORT }}
-          script: 
+          script: |
             cd /root/todo-app
             git pull
             docker-compose --env-file .env.docker up -d --build
